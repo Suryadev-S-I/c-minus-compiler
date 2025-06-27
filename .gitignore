@@ -1,7 +1,0 @@
-*.o
-*.exe
-*.out
-test*.cpp
-b.txt
-.vscode
-.gitignore
