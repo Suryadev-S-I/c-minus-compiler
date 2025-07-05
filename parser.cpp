@@ -1,6 +1,9 @@
 #include "parser.hpp"
+#include <utility>
 
 //error ->factor_
+//maybe fixed
+//TODO: make some functions const
 
 bool PARSER::match(TokenType tokentype)
 {
@@ -125,7 +128,7 @@ std::unique_ptr<ASTnode> PARSER::primary()
 
 std::unique_ptr<ASTnode> PARSER::simple_expr()
 {
-    std::unique_ptr<ASTnode>left{std::move(arithmetic_expr())};
+    std::unique_ptr<ASTnode>left{arithmetic_expr()};
     std::cout<<" c ";
     TOKEN token{};
     if(match(std::vector<TokenType>{GREATER, GREATER_EQUAL, LESS, LESS_EQUAL}))
@@ -133,11 +136,12 @@ std::unique_ptr<ASTnode> PARSER::simple_expr()
         token = previous();
     }
     std::cout<<" d ";
-    std::unique_ptr<ASTnode>right{std::move(arithmetic_expr())};
+    std::unique_ptr<ASTnode>right{arithmetic_expr()};
     //std::cout<<"  simple_expr  \n"; 
     std::cout<<" e \n";
     //BinaryOp expr {left, token, right};
-    return std::unique_ptr<ASTnode>{std::make_unique<BinaryOp>(left, token, right)};
+    //this or the below method (return value)
+    return std::make_unique<ASTnode>{std::move(std::make_unique<BinaryOp>(left, token, right))};
 }
 
 std::unique_ptr<ASTnode> PARSER::arithmetic_expr()
@@ -146,7 +150,7 @@ std::unique_ptr<ASTnode> PARSER::arithmetic_expr()
     {
         TOKEN op {previous()};
         std::unique_ptr<ASTnode> expr {factor_()};
-        return std::unique_ptr<ASTnode> {std::make_unique<UnaryOp>(UnaryOp{op, expr})};
+        return std::unique_ptr<ASTnode> {std::make_unique<UnaryOp>(op, expr)};
     }else //if (match(INTEGER))
     {
         std::unique_ptr<ASTnode> left_expr {factor_()};
@@ -157,9 +161,8 @@ std::unique_ptr<ASTnode> PARSER::arithmetic_expr()
         std::unique_ptr<ASTnode> right_expr {factor_()};
         std::cout<<" b\n";
         //BinaryOp expr {left_expr, op, right_expr};
-        auto a = std::make_unique<BinaryOp>(left_expr, op, right_expr);
         std::cout<<"j";
-        return a;
+        return std::unique_ptr<ASTnode> {std::make_unique<BinaryOp>(left_expr, op, right_expr)};
 
     }
 }
@@ -170,12 +173,13 @@ std::unique_ptr<ASTnode> PARSER::factor_()
     if (match(INTEGER))
     {
         //std::cout<<current <<": test\n";
-        auto k {(std::make_unique<NumberNode> (previous()))};
-        return std::unique_ptr<ASTnode>(std::move(k));
+        //make pointer to deerived class and assign it to pointer of base class
+        std::unique_ptr<ASTnode> k {std::make_unique<NumberNode> (previous())};
+        return k;
     }
     if(match(LEFT_PAREN))
     {
-        std::unique_ptr<ASTnode> expr = expression();
+        std::unique_ptr<ASTnode> expr {expression())};
         if(match(RIGHT_PAREN))
         {
             return expr;
@@ -185,6 +189,6 @@ std::unique_ptr<ASTnode> PARSER::factor_()
             std::cout<<"End of file\n";
             std::exit(1);
         }
-    return std::unique_ptr<ASTnode>{};
+    return std::make_unique<ASTnode>();
 }
 
