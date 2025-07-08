@@ -1,16 +1,9 @@
 #include "parser.hpp"
 #include <utility>
 
-//error ->factor_
-//maybe fixed
-//TODO: make some functions const
 
 bool PARSER::match(TokenType tokentype)
-{
-    //std::cout<<"current: "<<current<<" ";
-    //std::cout << tokens[current].value <<"\n";//<<tokens[3].value;
-    //std::exit(1);
-    
+{   
     if (tokens[current].type == tokentype)
     {
         current++;
@@ -19,7 +12,7 @@ bool PARSER::match(TokenType tokentype)
     else{ return false; }
 }
 
-bool PARSER::match(std::vector<TokenType> tokentypes)
+bool PARSER::match(const std::vector<TokenType>& tokentypes)
 {
     for(TokenType tokentype: tokentypes)
     {
@@ -29,7 +22,6 @@ bool PARSER::match(std::vector<TokenType> tokentypes)
             return true;
         }
     }
-    //std::cout << "match(tokens)\n";
     return false;
 }
 
@@ -40,56 +32,54 @@ TOKEN PARSER::previous()
 
 std::unique_ptr<ASTnode> PARSER::expression()
 {
-    return simple_expr(); //variable declaration to be added
+    return equality(); //variable declaration to be added
 }
 
-/*std::unique_ptr<ASTnode> PARSER::equality()
+std::unique_ptr<ASTnode> PARSER::equality()
 {
-    std::unique_ptr<ASTnode> expr = comparison();
-
-    while (match(NOT_EQUAL) || match(EQUAL_EQUAL))
+    std::unique_ptr<ASTnode> expr{comparison()};
+    while (match({EQUAL_EQUAL, NOT_EQUAL}))
     {
-        TOKEN op {previous()};
-        std::unique_ptr<ASTnode> right = comparison();
-        expr = std::make_unique<BinaryOp>(BinaryOp {std::make_unique<BinaryOp>(expr),op, std::make_unique<BinaryOp>(right)});
+        TOKEN token{previous()};
+        std::unique_ptr<ASTnode> right{comparison()};
+        expr = std::make_unique<BinaryOp>(expr,token,right);
     }
-
     return expr;
 }
 
 std::unique_ptr<ASTnode> PARSER::comparison()
 {
-    std::unique_ptr<ASTnode> expr{term()};
+    std::unique_ptr<ASTnode>expr{term()};
+    TOKEN token{};
     while(match(std::vector<TokenType>{GREATER, GREATER_EQUAL, LESS, LESS_EQUAL}))
     {
-        TOKEN op{previous()};
-        std::unique_ptr<ASTnode> right{term()};
-        expr = std::make_unique<BinaryOp>(BinaryOp {std::make_unique<BinaryOp>(expr),op, std::make_unique<BinaryOp>(right)});
+        token = previous();
+        std::unique_ptr<ASTnode>right{term()};
+        expr = std::move(std::make_unique<BinaryOp>(expr, token, right));//move might be unnecessary
     }
     return expr;
 }
-
-std::unique_ptr<ASTnode> PARSER::term()
+ 
+std::unique_ptr<ASTnode> PARSER::term() 
 {
     std::unique_ptr<ASTnode> expr{factor()};
-
-    while (match(MINUS) || match(PLUS))
+    while(match({MINUS,PLUS}))
     {
-        TOKEN op{previous()};
+        TOKEN token{previous()};
         std::unique_ptr<ASTnode> right{factor()};
-        expr = std::make_unique<BinaryOp>(BinaryOp {std::make_unique<BinaryOp>(expr),op, std::make_unique<BinaryOp>(right)});
+        expr = std::make_unique<BinaryOp>(expr, token, right);
     }
     return expr;
 }
 
 std::unique_ptr<ASTnode> PARSER::factor()
 {
-    std::unique_ptr<ASTnode> expr{std::move(unary())};
-    while (match(SLASH) || match(STAR))
+    std::unique_ptr<ASTnode> expr{unary()};
+    while(match({SLASH,STAR}))
     {
-        TOKEN op{previous()};
-        std::unique_ptr<ASTnode> right{std::move(unary())};
-        expr =  std::move(std::make_unique<BinaryOp>( BinaryOp{expr,op, right}));
+        TOKEN token{previous()};
+        std::unique_ptr<ASTnode> right{unary()};
+        expr = std::make_unique<BinaryOp>(expr, token, right);
     }
     return expr;
 }
@@ -98,97 +88,29 @@ std::unique_ptr<ASTnode> PARSER::unary()
 {
     if(match(MINUS))
     {
-        TOKEN op { previous() };
-        std::unique_ptr<ASTnode> right {std::move(unary())};
-
-        return std::unique_ptr<ASTnode> {std::make_unique<UnaryOp>(UnaryOp {op, right})};
-        // ???? right is supposed to be unique_ptr<ASTnode> for Unaryop constructor
+        TOKEN token{previous()};
+        std::unique_ptr<ASTnode> expr{primary()};
+        return std::make_unique<UnaryOp>(token, expr);
+    }else
+    {
+        return primary();
     }
-    return primary();
 }
 
 std::unique_ptr<ASTnode> PARSER::primary()
 {
-    if (match(INTEGER))
+    if(match(INTEGER))
     {
-        return std::unique_ptr<ASTnode> {std::make_unique<NumberNode> (NumberNode{previous()})};
-    }
-    if(match(LEFT_PAREN))
-    {
-        std::unique_ptr<ASTnode> expr = expression();
-        if(match(RIGHT_PAREN))
-        {
-            return expr;
-        }else
-        {
-            //error
-        }
-    }
-}*/
-
-std::unique_ptr<ASTnode> PARSER::simple_expr()
-{
-    std::unique_ptr<ASTnode>left{arithmetic_expr()};
-    std::cout<<" c ";
-    TOKEN token{};
-    if(match(std::vector<TokenType>{GREATER, GREATER_EQUAL, LESS, LESS_EQUAL}))
-    {
-        token = previous();
-    }
-    std::cout<<" d ";
-    std::unique_ptr<ASTnode>right{arithmetic_expr()};
-    //std::cout<<"  simple_expr  \n"; 
-    std::cout<<" e \n";
-    //BinaryOp expr {left, token, right};
-    //this or the below method (return value)
-    return std::unique_ptr<ASTnode>(std::move(std::make_unique<BinaryOp>(left, token, right)));
-}
- 
-std::unique_ptr<ASTnode> PARSER::arithmetic_expr()
-{
-    if (match(MINUS))
-    {
-        TOKEN op {previous()};
-        std::unique_ptr<ASTnode> expr {factor_()};
-        return std::unique_ptr<ASTnode> {std::make_unique<UnaryOp>(op, expr)};
-    }else //if (match(INTEGER))
-    {
-        std::unique_ptr<ASTnode> left_expr {factor_()};
-        //left_expr->print();
-        match(PLUS)||match(MINUS); //increments current
-        //std::cout<<current<<" \n";
-        TOKEN op {previous()};
-        std::unique_ptr<ASTnode> right_expr {factor_()};
-        std::cout<<"b\n"<<"b\n";
-        //std::cout<<"j";
-        return std::unique_ptr<ASTnode> {std::make_unique<BinaryOp>(left_expr, op, right_expr)};
-        //returning pointer to derived class is enough
-    }
-}
-
-std::unique_ptr<ASTnode> PARSER::factor_()
-{
-    //return value seems to get deleted
-    if (match(INTEGER))
-    {
-        //std::cout<<current <<": test\n";
-        //make pointer to deerived class and assign it to pointer of base class
-        std::unique_ptr<ASTnode> k {std::make_unique<NumberNode> (previous())};
-        std::cout <<"z\n";
-        return k;
-    }
-    if(match(LEFT_PAREN))
+        return std::make_unique<NumberNode>(previous());
+    }else if (match(LEFT_PAREN))
     {
         std::unique_ptr<ASTnode> expr {expression()};
-        if(match(RIGHT_PAREN))
+        if(match(RIGHT_PAREN)) { return expr; }
+        else
         {
-            return expr;
-        }
-    }else if (match(SEMICOLON))
-        {
-            std::cout<<"End of file\n";
+            std::cout<< "\nError in primary()\n";
             std::exit(1);
-        }
-    //return std::make_unique<ASTnode>();
+        }//do something to avoid warning about a lack of return, assert won't work
+    }
+    
 }
-
