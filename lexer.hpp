@@ -51,7 +51,7 @@ class TOKEN{
     public:
         TOKEN(TokenType type_, std::string value_, int line_, int column_):type(type_), value(value_), line(line_), column(column_){}
 
-        TOKEN(){}
+        TOKEN()=default;
 
         void print(){
             std::cout << "TOKEN: " << value << " at line " << line << " column " << column << "\n";

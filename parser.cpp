@@ -141,9 +141,9 @@ std::unique_ptr<ASTnode> PARSER::simple_expr()
     std::cout<<" e \n";
     //BinaryOp expr {left, token, right};
     //this or the below method (return value)
-    return std::make_unique<ASTnode>{std::move(std::make_unique<BinaryOp>(left, token, right))};
+    return std::unique_ptr<ASTnode>(std::move(std::make_unique<BinaryOp>(left, token, right)));
 }
-
+ 
 std::unique_ptr<ASTnode> PARSER::arithmetic_expr()
 {
     if (match(MINUS))
@@ -159,11 +159,10 @@ std::unique_ptr<ASTnode> PARSER::arithmetic_expr()
         //std::cout<<current<<" \n";
         TOKEN op {previous()};
         std::unique_ptr<ASTnode> right_expr {factor_()};
-        std::cout<<" b\n";
-        //BinaryOp expr {left_expr, op, right_expr};
-        std::cout<<"j";
+        std::cout<<"b\n"<<"b\n";
+        //std::cout<<"j";
         return std::unique_ptr<ASTnode> {std::make_unique<BinaryOp>(left_expr, op, right_expr)};
-
+        //returning pointer to derived class is enough
     }
 }
 
@@ -175,11 +174,12 @@ std::unique_ptr<ASTnode> PARSER::factor_()
         //std::cout<<current <<": test\n";
         //make pointer to deerived class and assign it to pointer of base class
         std::unique_ptr<ASTnode> k {std::make_unique<NumberNode> (previous())};
+        std::cout <<"z\n";
         return k;
     }
     if(match(LEFT_PAREN))
     {
-        std::unique_ptr<ASTnode> expr {expression())};
+        std::unique_ptr<ASTnode> expr {expression()};
         if(match(RIGHT_PAREN))
         {
             return expr;
@@ -189,6 +189,6 @@ std::unique_ptr<ASTnode> PARSER::factor_()
             std::cout<<"End of file\n";
             std::exit(1);
         }
-    return std::make_unique<ASTnode>();
+    //return std::make_unique<ASTnode>();
 }
 

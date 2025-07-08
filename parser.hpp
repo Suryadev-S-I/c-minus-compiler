@@ -11,6 +11,7 @@ class ASTnode
 public:
     virtual ~ASTnode() = default;
     virtual void print()=0;
+    ASTnode() = default;
     //virtual void get_v()=0;
     // virtual void print(int indent = 0) const = 0; //Pretty printing (indent is indentaion for the nodes in the tree)
     //virtual void accept(Visitor &visitor); // Visitor has functions to work with each derived class?

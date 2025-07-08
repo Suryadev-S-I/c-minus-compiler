@@ -12,5 +12,5 @@ $(objects): %.o: %.cpp
 	g++ -c $^
 
 clean:
-	@rm *.o *.out
+	rm *.o *.out
 	@echo "Removed object files and executables"
