@@ -125,24 +125,34 @@ bool LEXER::is_alpha(char chr)
 void LEXER::skip_whitespace()
 {
     current--;
+    column--;
     char c{peek_char()};
-    while (c == ' ' || c == '\t' || c == '\r' || c == '\n')
+    //std::cout<<"\na\n";
+    do
     {
+        if (c == '\n')
+        {
+            line++;
+            column = -1;
+            //return;
+        }
         current++;
-        if (c == '\n') { line++; column = 0;}
+        column++;
         c = peek_char();
-    }
+    }while (c == ' ' || c == '\t' || c == '\r' || c == '\n');
+    //current--;
+    //column--;
 }
 
 void LEXER::read_number()
 {
-    while(isdigit(peek_char())) { current++; }
+    while(isdigit(peek_char())) { current++; column++; }
     add_token(INTEGER);
 }
 
 void LEXER::read_identifier()
 {
-    while (is_alpha(peek_char())) { current++; }
+    while (is_alpha(peek_char())) { current++; column++;}
     std::string token{source.substr(start, current - start)};
     if (HashMap::map.find(token) != HashMap::map.end())
     {
@@ -157,18 +167,24 @@ void LEXER::read_identifier()
             if (source[current] == '(')
             {
                 current -= emptyCharCount;
+                column -= emptyCharCount;
                 add_token(FUNC_NAME);
                 current +=emptyCharCount;
+                column +=emptyCharCount;
                 func_name = true;
                 
             }
             emptyCharCount++;
-        } while (source[current++] == ' '); 
+            column++;
+            current++;
+        } while (source[current] == ' '); 
         current--;
+        column--;
         emptyCharCount--;
         if (!func_name)
         {
             current -= emptyCharCount;
+            column -= emptyCharCount;
             add_token(VAR_NAME);
         }
     }
@@ -176,11 +192,11 @@ void LEXER::read_identifier()
 
 void LEXER::handle_comments()
 {
-    while (peek_char() != '\n' && current != source.length()) current++;
+    while (peek_char() != '\n' && current != source.length()) {current++; column++;}
 }
 
 void LEXER::add_token(TokenType type)
 {
     std::string text {source.substr(start, current-start)};
-    LEXER::tokens.emplace_back(type, text, line, column);
+    LEXER::tokens.emplace_back(type, text, line, column-(current-start)+1);
 }

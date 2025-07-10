@@ -6,6 +6,7 @@
 #include<iostream>
 #include<unordered_map>
 
+//add EOF character?
 enum TokenType {
     // Keywords
     INT,

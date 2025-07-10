@@ -15,14 +15,13 @@ int main(int argc, char** argv)
 
     std::ifstream file{file_name};
 
-    while (std::getline(file, line) && line !="exit")
+    while (std::getline(file, line))
     {
         code += line + "\n";
     }
-    //std::cout << code;
     LEXER lexer{code};
-    //lexer.tokenize(); //replace this with the bottom line
     lexer.tokenize();
     PARSER parser{lexer.get_tokens()};
-    parser.expression();
+    auto expr { parser.parse_program() };
+    expr->print();
 }
