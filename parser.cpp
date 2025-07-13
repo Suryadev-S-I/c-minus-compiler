@@ -77,7 +77,7 @@ bool PARSER::match(const std::vector<TokenType>& tokentypes)
 
 TOKEN PARSER::consume(TokenType type, const std::string& message)
 {
-    //use try catch and use synchronize() outside
+    //use try catch and use synchronize() outside the function
     if(!match(type))
     {
         error(peek(), message);
@@ -91,8 +91,7 @@ std::unique_ptr<ASTnode> PARSER::parse_program()
     std::unique_ptr<CompoundStmt> statement{std::make_unique<CompoundStmt>()};
     while(PARSER::current != PARSER::tokens.size())
     {
-        //(statement->a).push_back(3);
-        std::cout<<"\ndddd\n"; 
+        //use try catch and synchronise here?
         statement->statements.push_back(std::move(parse_declaration()));
     }
     return statement;
@@ -100,34 +99,83 @@ std::unique_ptr<ASTnode> PARSER::parse_program()
 
 std::unique_ptr<ASTnode> PARSER::parse_declaration()
 {
-    TOKEN next_token{peek()};
+    //add try catch here?
+    TOKEN type{peek()};
     if(match({INT,VOID}))
     {
-        return varDeclare(next_token);
-        
+        if(match(VAR_NAME))
+        {
+            return varDeclare(type);
+        }else if(match(FUNC_NAME))
+        {
+            return funcDeclare(type);
+        }else
+        {
+            error(peek(), "Expected an identifier");
+            return nullptr;
+        }
+    }else if(match(LEFT_BRACE))
+    {
+        auto expr{ parse_program() };
+        consume(RIGHT_BRACE, "Expected '}' at the end of code block.\n");
+        return expr;
+    }else if(match(IF))
+    {
+        return parse_ifStmt();
     }
     else //check for var or func name for redefinition or function call
-    {
+    { 
         auto a = parse_expression();
+        consume(SEMICOLON, "Expected a semicolon.\n");
         return a;
     }
 }
 
+std::unique_ptr<ASTnode> PARSER::funcDeclare(TOKEN funcType)
+{
+    TOKEN funcName { previous() };
+    std::unique_ptr<ASTnode> expr{};
+    consume(LEFT_PAREN, "Expected '('.\n");
+    //Parameters
+    consume(RIGHT_PAREN, "Expected ')'.\n");
+    if(match(LEFT_BRACE))
+    {
+        expr = std::move(parse_program());
+        consume(RIGHT_BRACE, "Expected '}'.\n");
+    }else consume(SEMICOLON, "Expected ';'.\n"); // if no braces
+
+    return std::make_unique<FuncDeclaration>(funcType, funcName, expr);
+}
 std::unique_ptr<ASTnode> PARSER::varDeclare(TOKEN varType)
 {
-    TOKEN varName { consume(VAR_NAME, "Expected a variable name\n") };
+    TOKEN varName { previous() };
     std::unique_ptr<ASTnode> initializer = nullptr;
     if(match(EQUAL))
     {
         initializer = std::move(parse_expression());
+        consume(SEMICOLON, "Expected a semicolon.\n");
     }
     return std::make_unique<VarDeclaration>(varType, varName, initializer);
 }
 
+std::unique_ptr<ASTnode> PARSER::parse_ifStmt()
+{
+    consume(LEFT_PAREN, "Expected '(' after 'if'.\n");
+    auto condition { parse_expression() };
+    consume(RIGHT_PAREN, "Expected ')' after 'if' condition.\n");
+    auto thenBranch { parse_expression() };
+    std::unique_ptr<ASTnode> elseBranch{};
+    if(match(ELSE))
+    {
+        elseBranch = std::move(parse_expression());
+    }
+    return std::make_unique<IfStmt>(condition, thenBranch, elseBranch);
+}
+
 std::unique_ptr<ASTnode> PARSER::parse_expression()
 {
-    
-    return equality(); //variable declaration to be added
+    auto expr {equality()};
+    return expr;
 }
 
 std::unique_ptr<ASTnode> PARSER::equality()
@@ -195,6 +243,7 @@ std::unique_ptr<ASTnode> PARSER::unary()
 
 std::unique_ptr<ASTnode> PARSER::primary()
 {
+    //doesn't check for identifiers right now.
     if(match(INTEGER))
     {
         return std::make_unique<NumberNode>(previous());
@@ -213,21 +262,54 @@ std::unique_ptr<ASTnode> PARSER::primary()
     
 }
 
+void CompoundStmt::print() const
+{
+    for(int i{}; i<statements.size() ;i++)
+    {
+        statements.at(i)->print();
+        std::cout << "\n";
+    }
+}
+
 void VarDeclaration::print() const
 {
     std::cout << var_type.value << " " << var_name.value << " = ";
     if (expr)
         VarDeclaration::expr->print();
+}
+
+void FuncDeclaration::print() const
+{
+    std::cout << func_type.value << " " << func_name.value << "()";
+    if (expr)
+    std::cout << "\n{";
+    FuncDeclaration::expr->print();  
+    std::cout << "\n}";
+}
+
+void IfStmt::print() const
+{
+    std::cout << "if(";
+    condition->print();
+    std::cout << ")\n{\n    ";
+    thenBranch->print();
+    std::cout << "\n}";
+    if(elseBranch)
+    {
+        std::cout << "else\n{\n    ";
+        elseBranch->print();
+        std::cout << "\n}";
+    }
     std::cout << "\n";
 }
 
 void BinaryOp::print() const
 {
-    std::cout << " (";
+    std::cout << "(";
     BinaryOp::left->print();
     std::cout <<" " << BinaryOp::token.value << " ";
     BinaryOp::right->print();
-    std::cout << " ) ";
+    std::cout << ")";
 }
 
 void UnaryOp::print() const

@@ -1,6 +1,6 @@
 #include "lexer.hpp"
 
-#define Print
+//#define Print
 
 namespace HashMap{
     std::unordered_map<std::string, TokenType> map{
