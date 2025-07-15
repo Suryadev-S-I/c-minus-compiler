@@ -16,7 +16,6 @@ void PARSER::error(const TOKEN& token, const std::string& message)
 void PARSER::synchronize()
 {
     advance();
-
     while (PARSER::current != PARSER::tokens.size()) {
       if (previous().type == SEMICOLON) return;
 
@@ -31,7 +30,6 @@ void PARSER::synchronize()
         case RETURN:
           return;
       }
-
       advance();
     }
 }
@@ -54,7 +52,7 @@ TOKEN PARSER::peek() const
 
 bool PARSER::match(TokenType tokentype)
 {   
-    if (tokens[current].type == tokentype)
+    if (peek().type == tokentype)
     {
         advance();
         return true;
@@ -87,12 +85,15 @@ TOKEN PARSER::consume(TokenType type, const std::string& message)
 
 std::unique_ptr<ASTnode> PARSER::parse_program()
 {
-    //std::vector<std::unique_ptr<ASTnode>> statements{};
     std::unique_ptr<CompoundStmt> statement{std::make_unique<CompoundStmt>()};
-    while(PARSER::current != PARSER::tokens.size())
+    while(PARSER::current < PARSER::tokens.size() && peek().type != RIGHT_BRACE)
     {
         //use try catch and synchronise here?
         statement->statements.push_back(std::move(parse_declaration()));
+    }
+    if(PARSER::current < PARSER::tokens.size())
+    {
+        consume(RIGHT_BRACE, "Expected a '}'.\n");
     }
     return statement;
 }
@@ -117,13 +118,17 @@ std::unique_ptr<ASTnode> PARSER::parse_declaration()
     }else if(match(LEFT_BRACE))
     {
         auto expr{ parse_program() };
-        consume(RIGHT_BRACE, "Expected '}' at the end of code block.\n");
         return expr;
     }else if(match(IF))
     {
         return parse_ifStmt();
-    }
-    else //check for var or func name for redefinition or function call
+    }else if(match(WHILE))
+    {
+        return parse_whileStmt();
+    }else if(match(SEMICOLON))
+    {
+        return nullptr;
+    }else //check for var or func name for redefinition or function call
     { 
         auto a = parse_expression();
         consume(SEMICOLON, "Expected a semicolon.\n");
@@ -136,16 +141,37 @@ std::unique_ptr<ASTnode> PARSER::funcDeclare(TOKEN funcType)
     TOKEN funcName { previous() };
     std::unique_ptr<ASTnode> expr{};
     consume(LEFT_PAREN, "Expected '('.\n");
-    //Parameters
+
+    auto parameters{parse_parameters()};
+
     consume(RIGHT_PAREN, "Expected ')'.\n");
     if(match(LEFT_BRACE))
     {
         expr = std::move(parse_program());
-        consume(RIGHT_BRACE, "Expected '}'.\n");
     }else consume(SEMICOLON, "Expected ';'.\n"); // if no braces
 
-    return std::make_unique<FuncDeclaration>(funcType, funcName, expr);
+    return std::make_unique<FuncDeclaration>(funcType, funcName, parameters, expr);
 }
+std::unique_ptr<ASTnode> PARSER::parse_parameters()
+{
+    if(peek().type == RIGHT_PAREN)
+    {
+        return nullptr;
+    }
+    auto parameters {std::make_unique<Parameter>()};
+    do{
+        if(!match(INT))
+        {
+            consume(VOID, "Expected  a type.\n");
+        }
+        TOKEN varType{previous()};
+        consume(VAR_NAME, "Expected  a variable name.\n");
+        TOKEN varName{previous()};
+        parameters->parameters.push_back(std::move(std::make_unique<VarDeclaration>(varType, varName)));
+    } while (match(COMMA));
+    return parameters;
+}
+
 std::unique_ptr<ASTnode> PARSER::varDeclare(TOKEN varType)
 {
     TOKEN varName { previous() };
@@ -153,23 +179,35 @@ std::unique_ptr<ASTnode> PARSER::varDeclare(TOKEN varType)
     if(match(EQUAL))
     {
         initializer = std::move(parse_expression());
-        consume(SEMICOLON, "Expected a semicolon.\n");
     }
+    consume(SEMICOLON, "Expected a semicolon.\n");
     return std::make_unique<VarDeclaration>(varType, varName, initializer);
 }
+
 
 std::unique_ptr<ASTnode> PARSER::parse_ifStmt()
 {
     consume(LEFT_PAREN, "Expected '(' after 'if'.\n");
     auto condition { parse_expression() };
     consume(RIGHT_PAREN, "Expected ')' after 'if' condition.\n");
-    auto thenBranch { parse_expression() };
+    auto thenBranch { match(LEFT_BRACE)?parse_program():parse_declaration() };
     std::unique_ptr<ASTnode> elseBranch{};
     if(match(ELSE))
     {
-        elseBranch = std::move(parse_expression());
+        elseBranch = std::move(parse_declaration());
     }
     return std::make_unique<IfStmt>(condition, thenBranch, elseBranch);
+}
+
+std::unique_ptr<ASTnode> PARSER::parse_whileStmt()
+{
+    consume(LEFT_PAREN, "Expected '(' after 'if'.\n");
+    auto condition { parse_expression() };
+    consume(RIGHT_PAREN, "Expected ')' after 'if' condition.\n");
+    consume(LEFT_BRACE, "Expected '{' after 'while'.\n");
+    auto loop_body { parse_program() };
+
+    return std::make_unique<WhileStmt>(condition, loop_body);
 }
 
 std::unique_ptr<ASTnode> PARSER::parse_expression()
@@ -253,10 +291,10 @@ std::unique_ptr<ASTnode> PARSER::primary()
         if(!match(RIGHT_PAREN)) { error(peek(), "missing ')'\n"); }
        
         return expr;
-    }
-    else
+    }else
     {
         error(peek(), "expected an expression");
+        std::exit(1);
         return nullptr; //might cause problems
     }
     
@@ -266,25 +304,49 @@ void CompoundStmt::print() const
 {
     for(int i{}; i<statements.size() ;i++)
     {
-        statements.at(i)->print();
-        std::cout << "\n";
+        if(statements.at(i))
+        {    
+            statements.at(i)->print();
+            std::cout << "\n";
+        }
     }
 }
 
 void VarDeclaration::print() const
 {
-    std::cout << var_type.value << " " << var_name.value << " = ";
+    std::cout <<  var_type.value << " " << var_name.value;
     if (expr)
+    {
+        std::cout << " = ";
         VarDeclaration::expr->print();
+    }
 }
 
 void FuncDeclaration::print() const
 {
-    std::cout << func_type.value << " " << func_name.value << "()";
+    std::cout << func_type.value << " " << func_name.value << "(";
+    if(FuncDeclaration::parameters)
+    {
+        parameters->print();
+    }
+    std::cout << ")";
     if (expr)
-    std::cout << "\n{";
-    FuncDeclaration::expr->print();  
-    std::cout << "\n}";
+    {
+        std::cout << "\n{\n";
+        FuncDeclaration::expr->print();  
+        std::cout << "}";
+    }
+}
+
+void Parameter::print() const
+{
+    for(int i{}; i<parameters.size(); i++)
+    {
+        if(parameters.at(i))
+        {    
+            parameters.at(i)->print();
+        }
+    }
 }
 
 void IfStmt::print() const
@@ -293,14 +355,26 @@ void IfStmt::print() const
     condition->print();
     std::cout << ")\n{\n    ";
     thenBranch->print();
-    std::cout << "\n}";
+    std::cout << "}";
     if(elseBranch)
     {
         std::cout << "else\n{\n    ";
         elseBranch->print();
-        std::cout << "\n}";
+        std::cout << "}";
     }
     std::cout << "\n";
+}
+
+void WhileStmt::print() const
+{
+    std::cout << "while(";
+    condition->print();
+    std::cout << ")\n{\n";
+    if(loop_body)
+    {
+        loop_body->print();
+    }
+    std::cout << "}\n";
 }
 
 void BinaryOp::print() const

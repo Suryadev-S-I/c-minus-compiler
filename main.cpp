@@ -11,7 +11,7 @@ int main(int argc, char** argv)
     std::string code{};
 
     std::string file_name{};
-    (argc >= 2) ? file_name = argv[1] : file_name = "a.txt";
+    (argc >= 2) ? file_name = argv[1] : file_name = "code.txt";
 
     std::ifstream file{file_name};
 

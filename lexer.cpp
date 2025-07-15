@@ -1,8 +1,9 @@
 #include "lexer.hpp"
 
-//#define Print
+#define nPrint //change to print to d isplay token list
 
-namespace HashMap{
+namespace HashMap
+{
     std::unordered_map<std::string, TokenType> map{
         {"if", IF},
         {"else", ELSE},

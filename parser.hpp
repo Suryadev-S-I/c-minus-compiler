@@ -26,34 +26,41 @@ class VarDeclaration : public ASTnode
     public:
     void print() const override;
     void accept(Visitor &visitor) override{}
+    
     VarDeclaration(TOKEN type, TOKEN name, std::unique_ptr<ASTnode>&node)
     :var_type(type), var_name(name), expr(std::move(node)){}
+
+    VarDeclaration(TOKEN type, TOKEN name)
+    :var_type(type), var_name(name){}
 };
 class FuncDeclaration : public ASTnode
 {
     //TO-ADD: Parameters, body of the function
     TOKEN func_type{};
     TOKEN func_name{};
+    std::unique_ptr<ASTnode> parameters{};
     std::unique_ptr<ASTnode> expr{};
 
     public:
     void print() const override;
     void accept(Visitor &visitor) override{}
     
-    FuncDeclaration(TOKEN type, TOKEN name,std::unique_ptr<ASTnode>&node)
-    :func_type(type), func_name(name), expr(std::move(node)){}
+    FuncDeclaration(TOKEN type, TOKEN name, std::unique_ptr<ASTnode>& parameters_,std::unique_ptr<ASTnode>&node)
+    :func_type(type), func_name(name), parameters(std::move(parameters_)), expr(std::move(node)){}
 };
 class Parameter : public ASTnode
 {
+    public:
+    std::vector<std::unique_ptr<ASTnode>> parameters{};
+    void print() const override;
+    void accept(Visitor &visitor) override{}
 };
 class CompoundStmt : public ASTnode
 {
     public:
     std::vector<std::unique_ptr<ASTnode>> statements{};
-    //std::vector<int> a{};
     void print() const override;
     void accept(Visitor &visitor) override{}
-    //void add_statement(){}
 };
 class IfStmt : public ASTnode
 {
@@ -70,6 +77,15 @@ class IfStmt : public ASTnode
 };
 class WhileStmt : public ASTnode
 {
+    std::unique_ptr<ASTnode> condition{};
+    std::unique_ptr<ASTnode> loop_body{};
+
+    public:
+    void print() const override;
+    void accept(Visitor &visitor) override{}
+
+    WhileStmt(std::unique_ptr<ASTnode>& condition_, std::unique_ptr<ASTnode>& loop_body_)
+    : condition(std::move(condition_)), loop_body(std::move(loop_body_)){}
 };
 class ReturnStmt : public ASTnode
 {
@@ -103,12 +119,7 @@ public:
 
     UnaryOp(TOKEN token_, std::unique_ptr<ASTnode>& node) : token(token_), right(std::move(node)){}
 };
-class Variable : public ASTnode
-{
-};
-class Call : public ASTnode
-{
-};
+
 class NumberNode : public ASTnode
 {
     TOKEN token{};
@@ -161,8 +172,10 @@ public:
 
     std::unique_ptr<ASTnode> parse_program();
     std::unique_ptr<ASTnode> parse_declaration();
+    std::unique_ptr<ASTnode> parse_parameters();
     std::unique_ptr<ASTnode> parse_expression();
     std::unique_ptr<ASTnode> parse_ifStmt();
+    std::unique_ptr<ASTnode> parse_whileStmt();
 
     void error(const TOKEN& token, const std::string& message);
     void synchronize();
