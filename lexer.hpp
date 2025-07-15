@@ -78,5 +78,4 @@ class LEXER{
         std::vector<TOKEN>& get_tokens();
         LEXER(std::string& source):source(source){};    
 };
-
 #endif

@@ -1,6 +1,3 @@
-//BinaryOp and UnaryOp Node arguments are references. learn move constructors(-> && reference also) and std::move 
-
-
 #include "lexer.hpp"
 #include <memory>
 
@@ -11,10 +8,7 @@ class ASTnode
 public:
     virtual ~ASTnode() = default;
     virtual void print() const =0;
-    
-    //virtual void get_v()=0;
-    // virtual void print(int indent = 0) const = 0; //Pretty printing (indent is indentaion for the nodes in the tree)
-    virtual void accept(Visitor &visitor) =0; // Visitor has functions to work with each derived class?
+    virtual void accept(Visitor &visitor) =0; 
 };
 
 class VarDeclaration : public ASTnode
@@ -35,7 +29,6 @@ class VarDeclaration : public ASTnode
 };
 class FuncDeclaration : public ASTnode
 {
-    //TO-ADD: Parameters, body of the function
     TOKEN func_type{};
     TOKEN func_name{};
     std::unique_ptr<ASTnode> parameters{};
