@@ -281,17 +281,25 @@ std::unique_ptr<ASTnode> PARSER::unary()
 
 std::unique_ptr<ASTnode> PARSER::primary()
 {
-    //doesn't check for identifiers right now.
     if(match(INTEGER))
     {
         return std::make_unique<NumberNode>(previous());
-    }else if (match(LEFT_PAREN))
+    }
+    else if (match(LEFT_PAREN))
     {
         std::unique_ptr<ASTnode> expr {parse_expression()};
-        if(!match(RIGHT_PAREN)) { error(peek(), "missing ')'\n"); }
-       
+        consume(RIGHT_PAREN, "missing ')'\n");
         return expr;
-    }else
+    }
+    else if(match(VAR_NAME))
+    {
+        return std::make_unique<Variable>(previous());
+    }
+    else if(match(FUNC_NAME))
+    {
+        return std::make_unique<Call>(previous());
+    }
+    else
     {
         error(peek(), "expected an expression");
         std::exit(1);
@@ -389,6 +397,16 @@ void BinaryOp::print() const
 void UnaryOp::print() const
 {
         std::cout<<"(-"; UnaryOp::right->print(); std::cout<<")";
+}
+
+void Variable::print() const
+{
+    std::cout << Variable::value;
+}
+
+void Call::print() const
+{
+    std::cout << Call::value << "()";
 }
 
 void NumberNode::print() const

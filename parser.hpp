@@ -27,6 +27,7 @@ class VarDeclaration : public ASTnode
     VarDeclaration(TOKEN type, TOKEN name)
     :var_type(type), var_name(name){}
 };
+
 class FuncDeclaration : public ASTnode
 {
     TOKEN func_type{};
@@ -41,6 +42,7 @@ class FuncDeclaration : public ASTnode
     FuncDeclaration(TOKEN type, TOKEN name, std::unique_ptr<ASTnode>& parameters_,std::unique_ptr<ASTnode>&node)
     :func_type(type), func_name(name), parameters(std::move(parameters_)), expr(std::move(node)){}
 };
+
 class Parameter : public ASTnode
 {
     public:
@@ -48,6 +50,7 @@ class Parameter : public ASTnode
     void print() const override;
     void accept(Visitor &visitor) override{}
 };
+
 class CompoundStmt : public ASTnode
 {
     public:
@@ -55,6 +58,7 @@ class CompoundStmt : public ASTnode
     void print() const override;
     void accept(Visitor &visitor) override{}
 };
+
 class IfStmt : public ASTnode
 {
     std::unique_ptr<ASTnode> condition{};
@@ -68,6 +72,7 @@ class IfStmt : public ASTnode
     IfStmt(std::unique_ptr<ASTnode>& condition_,std::unique_ptr<ASTnode>& then_,std::unique_ptr<ASTnode>& else_)
     :condition(std::move(condition_)), thenBranch(std::move(then_)), elseBranch(std::move(else_)){}
 };
+
 class WhileStmt : public ASTnode
 {
     std::unique_ptr<ASTnode> condition{};
@@ -80,6 +85,7 @@ class WhileStmt : public ASTnode
     WhileStmt(std::unique_ptr<ASTnode>& condition_, std::unique_ptr<ASTnode>& loop_body_)
     : condition(std::move(condition_)), loop_body(std::move(loop_body_)){}
 };
+
 class ReturnStmt : public ASTnode
 {
     std::unique_ptr<ASTnode> expr{};
@@ -89,6 +95,7 @@ class ReturnStmt : public ASTnode
 
     ReturnStmt(std::unique_ptr<ASTnode>& node):expr(std::move(node)){}
 };
+
 class BinaryOp : public ASTnode
 {
     std::unique_ptr<ASTnode> left{};
@@ -102,6 +109,7 @@ public:
     BinaryOp(std::unique_ptr<ASTnode>& left_, TOKEN token_, std::unique_ptr<ASTnode>& right_):
     left(std::move(left_)), token(token_), right(std::move(right_)){}
 };
+
 class UnaryOp : public ASTnode
 {
 public:
@@ -122,6 +130,28 @@ public:
     void accept(Visitor &visitor) override{};
     void print() const override;
     NumberNode(TOKEN token_) : token(token_), value(token_.value){}
+};
+
+class Variable : public ASTnode
+{
+    TOKEN token{};
+    std::string value{};
+
+public:
+    void accept(Visitor &visitor) override{};
+    void print() const override;
+    Variable(TOKEN token_) : token(token_), value(token_.value){}
+};
+
+class Call : public ASTnode
+{
+    TOKEN token{};
+    std::string value{};
+
+public:
+    void accept(Visitor &visitor) override{};
+    void print() const override;
+    Call(TOKEN token_) : token(token_), value(token_.value){}
 };
 
 class Visitor
