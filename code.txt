@@ -1,2 +1,9 @@
-void func(int a){ 1+2; 2+3;}
-while(4+5){ 9;}
+int main()
+{    
+    void func(int a){ 1+2; 2+3;}
+    while(4+5){ 9;}
+    int var = 9;
+    {
+        while(9+8){8+7;}
+    }
+}

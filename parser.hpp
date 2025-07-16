@@ -7,7 +7,7 @@ class ASTnode
 {
 public:
     virtual ~ASTnode() = default;
-    virtual void print() const =0;
+    virtual void print(int indent = -1) const =0;
     virtual void accept(Visitor &visitor) =0; 
 };
 
@@ -18,7 +18,7 @@ class VarDeclaration : public ASTnode
     std::unique_ptr<ASTnode> expr{};
 
     public:
-    void print() const override;
+    void print(int indent = -1) const override;
     void accept(Visitor &visitor) override{}
     
     VarDeclaration(TOKEN type, TOKEN name, std::unique_ptr<ASTnode>&node)
@@ -36,7 +36,7 @@ class FuncDeclaration : public ASTnode
     std::unique_ptr<ASTnode> expr{};
 
     public:
-    void print() const override;
+    void print(int indent = -1) const override;
     void accept(Visitor &visitor) override{}
     
     FuncDeclaration(TOKEN type, TOKEN name, std::unique_ptr<ASTnode>& parameters_,std::unique_ptr<ASTnode>&node)
@@ -47,7 +47,7 @@ class Parameter : public ASTnode
 {
     public:
     std::vector<std::unique_ptr<ASTnode>> parameters{};
-    void print() const override;
+    void print(int indent = -1) const override;
     void accept(Visitor &visitor) override{}
 };
 
@@ -55,7 +55,7 @@ class CompoundStmt : public ASTnode
 {
     public:
     std::vector<std::unique_ptr<ASTnode>> statements{};
-    void print() const override;
+    void print(int indent = -1) const override;
     void accept(Visitor &visitor) override{}
 };
 
@@ -66,7 +66,7 @@ class IfStmt : public ASTnode
     std::unique_ptr<ASTnode> elseBranch{};
 
     public:
-    void print() const override;
+    void print(int indent = -1) const override;
     void accept(Visitor &visitor) override{}
 
     IfStmt(std::unique_ptr<ASTnode>& condition_,std::unique_ptr<ASTnode>& then_,std::unique_ptr<ASTnode>& else_)
@@ -79,7 +79,7 @@ class WhileStmt : public ASTnode
     std::unique_ptr<ASTnode> loop_body{};
 
     public:
-    void print() const override;
+    void print(int indent = -1) const override;
     void accept(Visitor &visitor) override{}
 
     WhileStmt(std::unique_ptr<ASTnode>& condition_, std::unique_ptr<ASTnode>& loop_body_)
@@ -91,7 +91,7 @@ class ReturnStmt : public ASTnode
     std::unique_ptr<ASTnode> expr{};
     public:
     void accept(Visitor &visitor) override{};
-    void print() const override;
+    void print(int indent = -1) const override;
 
     ReturnStmt(std::unique_ptr<ASTnode>& node):expr(std::move(node)){}
 };
@@ -104,7 +104,7 @@ class BinaryOp : public ASTnode
 
 public:
     void accept(Visitor &visitor) override{};
-    void print() const override;
+    void print(int indent = -1) const override;
 
     BinaryOp(std::unique_ptr<ASTnode>& left_, TOKEN token_, std::unique_ptr<ASTnode>& right_):
     left(std::move(left_)), token(token_), right(std::move(right_)){}
@@ -115,7 +115,7 @@ class UnaryOp : public ASTnode
 public:
     TOKEN token{};
     std::unique_ptr<ASTnode> right{};
-    void print() const override;
+    void print(int indent = -1) const override;
     void accept(Visitor &visitor) override{};
 
     UnaryOp(TOKEN token_, std::unique_ptr<ASTnode>& node) : token(token_), right(std::move(node)){}
@@ -128,7 +128,7 @@ class NumberNode : public ASTnode
 
 public:
     void accept(Visitor &visitor) override{};
-    void print() const override;
+    void print(int indent = -1) const override;
     NumberNode(TOKEN token_) : token(token_), value(token_.value){}
 };
 
@@ -139,7 +139,7 @@ class Variable : public ASTnode
 
 public:
     void accept(Visitor &visitor) override{};
-    void print() const override;
+    void print(int indent = -1) const override;
     Variable(TOKEN token_) : token(token_), value(token_.value){}
 };
 
@@ -150,7 +150,7 @@ class Call : public ASTnode
 
 public:
     void accept(Visitor &visitor) override{};
-    void print() const override;
+    void print(int indent = -1) const override;
     Call(TOKEN token_) : token(token_), value(token_.value){}
 };
 

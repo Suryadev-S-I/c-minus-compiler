@@ -308,108 +308,128 @@ std::unique_ptr<ASTnode> PARSER::primary()
     
 }
 
-void CompoundStmt::print() const
+void CompoundStmt::print(int indent) const
 {
+    indent++;
+    if (indent != 0)
+    {
+        for (int i{}; i < indent * 4; i++)
+        {
+            std::cout << " ";
+        }
+        std::cout << "{\n";
+    }
     for(int i{}; i<statements.size() ;i++)
     {
+        for(int j{}; j < indent*4; j++)
+        {
+            std::cout << " ";
+        }
         if(statements.at(i))
         {    
-            statements.at(i)->print();
+            statements.at(i)->print(indent);
             std::cout << "\n";
         }
     }
+    if (indent != 0)
+    {
+        for (int i{}; i < indent * 4; i++)
+        {
+            std::cout << " ";
+        }
+        std::cout << "{\n";
+    }
 }
 
-void VarDeclaration::print() const
+void VarDeclaration::print(int indent) const
 {
     std::cout <<  var_type.value << " " << var_name.value;
     if (expr)
     {
         std::cout << " = ";
-        VarDeclaration::expr->print();
+        VarDeclaration::expr->print(indent);
     }
 }
 
-void FuncDeclaration::print() const
+void FuncDeclaration::print(int indent) const
 {
     std::cout << func_type.value << " " << func_name.value << "(";
     if(FuncDeclaration::parameters)
     {
-        parameters->print();
+        parameters->print(indent);
     }
     std::cout << ")";
     if (expr)
     {
-        std::cout << "\n{\n";
-        FuncDeclaration::expr->print();  
-        std::cout << "}";
+        std::cout << "\n";
+        FuncDeclaration::expr->print(indent);  
     }
 }
 
-void Parameter::print() const
+void Parameter::print(int indent) const
 {
     for(int i{}; i<parameters.size(); i++)
     {
         if(parameters.at(i))
         {    
-            parameters.at(i)->print();
+            parameters.at(i)->print(indent);
         }
     }
 }
 
-void IfStmt::print() const
+void IfStmt::print(int indent) const
 {
     std::cout << "if(";
-    condition->print();
-    std::cout << ")\n{\n    ";
-    thenBranch->print();
+    condition->print(indent);
+    std::cout << ")\n";
+    for(int i{}; i < indent*4; i++){ std::cout << " "; }
+    std::cout << "{\n";
+    thenBranch->print(indent);
+    for(int i{}; i < indent*4; i++){ std::cout << " "; }
     std::cout << "}";
     if(elseBranch)
     {
-        std::cout << "else\n{\n    ";
-        elseBranch->print();
-        std::cout << "}";
+        std::cout << "else\n";
+        elseBranch->print(indent); 
     }
-    std::cout << "\n";
 }
 
-void WhileStmt::print() const
+void WhileStmt::print(int indent) const
 {
     std::cout << "while(";
-    condition->print();
-    std::cout << ")\n{\n";
+    condition->print(indent);
+    std::cout << ")\n";
     if(loop_body)
     {
-        loop_body->print();
+        loop_body->print(indent);
     }
-    std::cout << "}\n";
 }
 
-void BinaryOp::print() const
+void BinaryOp::print(int indent) const
 {
     std::cout << "(";
-    BinaryOp::left->print();
+    BinaryOp::left->print(indent);
     std::cout <<" " << BinaryOp::token.value << " ";
-    BinaryOp::right->print();
+    BinaryOp::right->print(indent);
     std::cout << ")";
 }
 
-void UnaryOp::print() const
+void UnaryOp::print(int indent) const
 {
-        std::cout<<"(-"; UnaryOp::right->print(); std::cout<<")";
+        std::cout<<"(-"; UnaryOp::right->print(indent); std::cout<<")";
 }
 
-void Variable::print() const
+void Variable::print(int indent) const
 {
     std::cout << Variable::value;
 }
 
-void Call::print() const
+void Call::print(int indent) const
 {
     std::cout << Call::value << "()";
 }
 
-void NumberNode::print() const
+void NumberNode::print(int indent) const
 {
     std::cout<< value;
 }
